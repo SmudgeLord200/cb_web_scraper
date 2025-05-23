@@ -146,7 +146,7 @@ def get_html_with_selenium(url, initial_wait_condition, click_actions):
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox") # for Linux servers
     options.add_argument('--window-size=1920,1080')
-    user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.180 Safari/537.36'
+    user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
     options.add_argument(f'user-agent={user_agent}')
 
     driver = None # Initialize driver to None for the finally block
@@ -179,6 +179,8 @@ def scrape_multiple_events_from_page(url, nlp, event_container_selector, title_s
     is_bfi = "bfi.org.uk" in url
     is_NT = "nationaltheatre.org.uk" in url
     is_NG = "npg.org.uk" in url
+    is_SBC = "southbankcentre.co.uk" in url
+    is_RA = "royalacademy.org.uk" in url
     html = ""
     
     try:
@@ -208,6 +210,14 @@ def scrape_multiple_events_from_page(url, nlp, event_container_selector, title_s
             ng_initial_wait = (By.CLASS_NAME, "o-card-standard")
             ng_click_actions = None
             html = get_html_with_selenium(url, ng_initial_wait, ng_click_actions)
+        elif is_SBC:
+            sbc_initial_wait = (By.CLASS_NAME, "c-event-card")
+            sbc_click_actions = None
+            html = get_html_with_selenium(url, sbc_initial_wait, sbc_click_actions)
+        elif is_RA:
+            ra_initial_wait = (By.CLASS_NAME, "whats-on-listing__item")
+            ra_click_actions = None
+            html = get_html_with_selenium(url, ra_initial_wait, ra_click_actions)
         else:
             res = requests.get(url)
             res.raise_for_status()
@@ -234,7 +244,7 @@ def scrape_multiple_events_from_page(url, nlp, event_container_selector, title_s
                         event_url = base_url + event_url
             else:
                 event_url = url
-            
+
             is_involved = is_cate_blanchett_involved(title, description, nlp)
 
             events.append({
@@ -340,7 +350,14 @@ def main():
         ("https://whatson.bfi.org.uk/Online/default.asp", "div.Highlight", "h3.Highlight__heading", "p.Highlight__copy", "a.Highlight__link", "https://www.bfi.org.uk"),
         ("https://www.bbc.co.uk/news/entertainment_and_arts", "li.e1gp961v0", "div.ssrcss-espw6b-Stack", "a", "a.ssrcss-5wtq5v-PromoLink", "https://www.bbc.co.uk"),
         ("https://www.npg.org.uk/whatson/events-calendar?when=&what=event&who=", "div.o-card-standard", "a.a-link--nodec", "div.o-card-standard__text > div:last-child", "div.o-card-standard__image", "https://www.npg.org.uk"),
-        
+        ("https://www.southbankcentre.co.uk/whats-on/", "div.c-event-card", "h3.c-event-card__title", "div.c-event-card__listing-details", "a.c-event-card__cover-link", "https://www.southbankcentre.co.uk"),
+        ("https://www.royalacademy.org.uk/exhibitions-and-events?page=1&what-filter=talks-lectures", "li.whats-on-listing__item", "h2.event-card__title", "h2.event-card__title", "a.event-card__link", "https://www.royalacademy.org.uk"),
+        ("https://www.nationalgallery.org.uk/events/talks-and-conversations", "article.card", "div.card-title", "div.event-description", "a.dl-product-link", "https://www.nationalgallery.org.uk"),
+        ("https://www.vam.ac.uk/whatson?type=talk", "li.b-event-teaser", "h2.b-event-teaser__title", "h2.b-event-teaser__title", "a.b-event-teaser__link", "https://www.vam.ac.uk"),
+        ("https://www.tate.org.uk/whats-on?event_type=talk", "div.card", "h2.card__title", "div.card__description", "a", "https://www.tate.org.uk"),
+        ("https://wellcomecollection.org/events?format=Wd-QYCcAACcAoiJS", "a.sc-d97058b-1", "h3.sc-4e66622a-0", "h3.sc-4e66622a-0", "a.sc-d97058b-1", "https://wellcomecollection.org"),
+        ("https://www.londonlibrary.co.uk/whats-on", "li.event", "h3.title", "div.event-description p", "a", "https://www.londonlibrary.co.uk"),
+
         # Test link of Cate news but rather an event
         # ("https://www.bbc.co.uk/news/entertainment-arts-17725952", "div.ssrcss-1ki8hfp-StyledZone", "h1.ssrcss-1s9pby4-Heading e10rt3ze0", "div.ssrcss-suhx0k-RichTextComponentWrapper", "a", "https://www.bbc.co.uk")
         
