@@ -22,7 +22,7 @@ env/
 
 # Output files
 cate_blanchett_events.json
-notified_events_urls.json
+notified_event_urls.json
 recipients.json
 test.py
 web_scraper_old.py
