@@ -17,7 +17,10 @@ This project scrapes various websites to find events (talks, screenings, Q&As, e
 
 ```
 web_scraper/
-├── web_scraper.py                # Main application script
+├── main.py                # Main application script
+├── email_notification.py  # Handles email sending
+├── scraper.py             # Handles event scraping and NLP
+├── data_storage.py        # Handles data storage
 ├── notified_event_urls.json      # Stores URLs of events already notified (created/updated by the script)
 ├── cate_blanchett_events.json    # Stores all relevant events found in the last run (created/updated by the script)
 ├── recipients.json               # (User-created) List of recipient email addresses in JSON format
