@@ -6,6 +6,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, WebDriverException
+from concurrent.futures import ThreadPoolExecutor
+import concurrent.futures
 
 def is_cate_blanchett_involved(title, description, nlp):
     """
@@ -259,11 +261,43 @@ def find_cate_blanchett_events_across_pages(start_urls_with_selectors, nlp):
     """
     Scrapes events across multiple pages (currently only the first page of each).
     """
-    all_events = []
-    for url_data in start_urls_with_selectors:
-        url, event_container_selector, title_selector, description_selector, link_selector, base_url = url_data
-        events_on_page = scrape_multiple_events_from_page(
-            url, nlp, event_container_selector, title_selector, description_selector, link_selector, base_url
-        )
-        all_events.extend(events_on_page)
-    return all_events
+    all_found_events = []
+    
+    # Determine a reasonable number of workers.
+    num_urls = len(start_urls_with_selectors)
+    max_workers = min(5, num_urls if num_urls > 0 else 1)
+
+    print(f"Starting scraping with up to {max_workers} concurrent workers for {num_urls} URLs.")
+
+    # Run the web scraping function concurrently
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Submit scraping tasks to the executor
+        # Key is the future object, value is the URL for context for the dictionary
+        '''
+        Example data structure:
+            {
+                <Future at ID state="pending">: url_data[0]
+            }
+        '''
+        # url_data[0]: target url, url_data[1]: event_container_selector, url_data[2]: title_selector
+        # url_data[3]: description_selector, url_data[4]: link_selector, url_data[5]: base_url
+        future_to_url_data = {
+            executor.submit(
+                scrape_multiple_events_from_page,
+                url_data[0], nlp, url_data[1], url_data[2], url_data[3], url_data[4], url_data[5]
+            ): url_data[0]  
+            for url_data in start_urls_with_selectors
+        }
+
+        for future in concurrent.futures.as_completed(future_to_url_data):
+            source_url = future_to_url_data[future]
+            try:
+                events_from_page = future.result()
+                if events_from_page:  # Check if the result is not None or empty
+                    all_found_events.extend(events_from_page) # Append to a result dictionary
+                    print(f"Successfully processed and got {len(events_from_page)} events from: {source_url}")
+            except Exception as exc:
+                print(f"Scraping {source_url} generated an exception: {exc}")
+
+    print(f"Finished scraping. Total events collected before filtering: {len(all_found_events)}")
+    return all_found_events

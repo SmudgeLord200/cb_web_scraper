@@ -2,6 +2,7 @@ import spacy
 import json
 from data_storage import load_notified_event_urls, load_recipients_from_file, save_to_json
 from email_notification import send_event_email
+from print_message import print_event_details
 from scraper import find_cate_blanchett_events_across_pages
 
 NOTIFIED_EVENTS_FILE = "notified_event_urls.json"
@@ -46,20 +47,20 @@ def main():
         # ("https://wwd.com/fashion-news/fashion-scoops/cate-blanchett-cohost-serpentine-summer-party-1237099478/", "div.lrv-u-width-100p", "h1.article-title", "div.a-content", "a", "https://wwd.com/fashion-news/fashion-scoops"),
     ]
 
-    previously_notified_urls = load_notified_event_urls(NOTIFIED_EVENTS_FILE)
+    # Call the web scaper function
     all_found_events = find_cate_blanchett_events_across_pages(start_urls_with_selectors, nlp)
-
     if not all_found_events:
         print("No events found during web scraping.")
         return
 
+    # Extract relevant events
     current_relevant_events = [event for event in all_found_events if event['is_involved']]
-
     if not current_relevant_events:
         print("No relevant events involving Cate Blanchett found in this run.")
         return
 
     # Filter out events that have already been notified
+    previously_notified_urls = load_notified_event_urls(NOTIFIED_EVENTS_FILE)
     newly_relevant_events = [
         event for event in current_relevant_events
         if event['url'] not in previously_notified_urls
@@ -67,24 +68,19 @@ def main():
 
     # Save all *currently* relevant events (new and old) to cate_blanchett_events.json for a complete snapshot
     if current_relevant_events:
-        print(f"\nFound {len(current_relevant_events)} relevant events involving Cate Blanchett (new and previously seen):")
+        print_event_details(current_relevant_events, f"Found {len(current_relevant_events)} relevant events involving Cate Blanchett (new and previously seen)")
         save_to_json(EVENT_FILE, current_relevant_events)
         print(f"All currently relevant events saved to {EVENT_FILE}")
 
     if newly_relevant_events:
-        print(f"\nFound {len(newly_relevant_events)} NEW relevant events involving Cate Blanchett:")
-        for event in newly_relevant_events:
-            print(f"- Title: {event['title']}")
-            print(f"  URL: {event['url']}")
-            print(f"  Description: {event['description']}")
-            print("-" * 20)
-        
+        print_event_details(newly_relevant_events, f"Found {len(newly_relevant_events)} NEW relevant events involving Cate Blanchett")
+
         # Email configuration
         recipient_email_list = load_recipients_from_file(RECIPIENTS_FILE)
 
         if not recipient_email_list:
             print("Warning: No recipient emails loaded. Email will not be sent.") 
-        
+
         email_subject = "New Cate Blanchett Event(s) Found"
         email_body = "The following new Cate Blanchett events were found:\n\n" + json.dumps(newly_relevant_events, indent=4)
 
