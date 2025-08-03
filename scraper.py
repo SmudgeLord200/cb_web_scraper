@@ -175,9 +175,10 @@ def scrape_multiple_events_from_page(url, nlp, event_container_selector, title_s
     events = []
     is_bfi = "bfi.org.uk" in url
     is_NT = "nationaltheatre.org.uk" in url
-    is_NG = "npg.org.uk" in url
+    # is_NG = "npg.org.uk" in url
     is_SBC = "southbankcentre.co.uk" in url
     is_RA = "royalacademy.org.uk" in url
+    is_NPG = "npg.org.uk" in url
     html = ""
     
     try:
@@ -187,8 +188,8 @@ def scrape_multiple_events_from_page(url, nlp, event_container_selector, title_s
                 {
                     'click_by': By.ID,
                     'click_value': "menuTopItem1",
-                    'wait_after_click_by': By.ID,
-                    'wait_after_click_value': "menuTopItem1"
+                    'wait_after_click_by': By.CLASS_NAME,
+                    'wait_after_click_value': "menuSub"
                 },
                 {
                     'click_by': By.CLASS_NAME,
@@ -203,10 +204,10 @@ def scrape_multiple_events_from_page(url, nlp, event_container_selector, title_s
             nt_initial_wait = (By.CLASS_NAME, "c-event-card")
             nt_click_actions = None
             html = get_html_with_selenium(url, nt_initial_wait, nt_click_actions)
-        elif is_NG:
-            ng_initial_wait = (By.CLASS_NAME, "o-card-standard")
-            ng_click_actions = None
-            html = get_html_with_selenium(url, ng_initial_wait, ng_click_actions)
+        # elif is_NG:
+        #     ng_initial_wait = (By.CLASS_NAME, "ng-card-wrap")
+        #     ng_click_actions = None
+        #     html = get_html_with_selenium(url, ng_initial_wait, ng_click_actions)
         elif is_SBC:
             sbc_initial_wait = (By.CLASS_NAME, "c-event-card")
             sbc_click_actions = None
@@ -215,6 +216,10 @@ def scrape_multiple_events_from_page(url, nlp, event_container_selector, title_s
             ra_initial_wait = (By.CLASS_NAME, "whats-on-listing__item")
             ra_click_actions = None
             html = get_html_with_selenium(url, ra_initial_wait, ra_click_actions)
+        elif is_NPG:
+            npg_initial_wait = (By.CLASS_NAME, "o-card-standard")
+            npg_click_actions = None
+            html = get_html_with_selenium(url, npg_initial_wait, npg_click_actions)
         else:
             res = requests.get(url)
             res.raise_for_status()
