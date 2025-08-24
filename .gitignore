@@ -15,6 +15,7 @@ env/
 *.sublime-project
 *.sublime-workspace
 .DS_Store
+downloaded_files/
 
 # spaCy models (if downloaded locally within the project, though usually they are installed globally or in venv)
 # Adjust if you have a specific directory for models
