@@ -155,9 +155,7 @@ def get_html_with_selenium(url, initial_wait_condition, click_actions):
     driver = None # Initialize driver to None for the finally block
     try:
         driver = webdriver.Chrome(options=options)
-        # driver = Driver(uc=True, headless=True, no_sandbox=True, browser="chrome", d_width=1920, d_height=1080, disable_gpu=True)
         
-        # driver.uc_open(url)
         driver.get(url)
 
         WebDriverWait(driver, 20).until(EC.presence_of_element_located(initial_wait_condition))
