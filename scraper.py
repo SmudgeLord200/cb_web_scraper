@@ -1,3 +1,4 @@
+import os
 import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -6,8 +7,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, WebDriverException
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 import concurrent.futures
+from fake_useragent import UserAgent
+from seleniumbase import Driver
 
 def is_cate_blanchett_involved(title, description, nlp):
     """
@@ -122,6 +125,7 @@ def is_cate_blanchett_involved(title, description, nlp):
 
     return False
 
+# General version for most sites
 def get_html_with_selenium(url, initial_wait_condition, click_actions):
     """
     Helper function to get HTML content using Selenium, handling common setup and interactions.
@@ -143,20 +147,27 @@ def get_html_with_selenium(url, initial_wait_condition, click_actions):
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox") # for Linux servers
     options.add_argument('--window-size=1920,1080')
-    user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+    options.add_argument("start-maximized")
+    # user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.7258.128 Safari/537.36'
+    user_agent = UserAgent().random
     options.add_argument(f'user-agent={user_agent}')
 
     driver = None # Initialize driver to None for the finally block
     try:
         driver = webdriver.Chrome(options=options)
+        # driver = Driver(uc=True, headless=True, no_sandbox=True, browser="chrome", d_width=1920, d_height=1080, disable_gpu=True)
+        
+        # driver.uc_open(url)
         driver.get(url)
 
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located(initial_wait_condition))
+        WebDriverWait(driver, 20).until(EC.presence_of_element_located(initial_wait_condition))
 
         if click_actions:
             for action in click_actions:
-                driver.find_element(action['click_by'], action['click_value']).click()
-                WebDriverWait(driver, 10).until(EC.presence_of_element_located((action['wait_after_click_by'], action['wait_after_click_value'])))
+                WebDriverWait(driver, 20).until(
+                    EC.element_to_be_clickable((action['click_by'], action['click_value']))
+                ).click()
+                WebDriverWait(driver, 20).until(EC.presence_of_element_located((action['wait_after_click_by'], action['wait_after_click_value'])))
         
         html_source = driver.page_source
     except TimeoutException:
@@ -168,6 +179,48 @@ def get_html_with_selenium(url, initial_wait_condition, click_actions):
             driver.quit()
     return html_source    
 
+# Make a SeleniumBase version for some sites like BFI
+def get_html_with_selenium_base(url, initial_wait_condition, click_actions):
+    """
+    Helper function to get HTML content using SeleniumBase, handling common setup and interactions.
+
+    Args:
+        url (str): The URL to load.
+        initial_wait_condition (tuple): A tuple (By, value) for the initial explicit wait.
+        click_actions (list, optional): A list of dictionaries, where each dictionary
+                                        specifies 'click_by', 'click_value',
+                                        'wait_after_click_by', and 'wait_after_click_value'.
+                                        Defaults to None.
+
+    Returns:
+        str: The page source HTML, or an empty string if an error occurs.
+    """
+    html_source = ""
+    driver = None # Initialize driver to None for the finally block
+    try:
+        driver = Driver(uc=True, headless=True, no_sandbox=True, browser="chrome", d_width=1920, d_height=1080, disable_gpu=True)
+        
+        driver.uc_open(url)
+
+        WebDriverWait(driver, 20).until(EC.presence_of_element_located(initial_wait_condition))
+
+        if click_actions:
+            for action in click_actions:
+                WebDriverWait(driver, 20).until(
+                    EC.element_to_be_clickable((action['click_by'], action['click_value']))
+                ).click()
+                WebDriverWait(driver, 20).until(EC.presence_of_element_located((action['wait_after_click_by'], action['wait_after_click_value'])))
+        
+        html_source = driver.get_page_source()
+    except TimeoutException:
+        print(f"Timed out waiting for content on {url}")
+    except WebDriverException as e:
+        print(f"Selenium WebDriver error on {url}: {e}")
+    finally:
+        if driver:
+            driver.quit()
+    return html_source
+
 def scrape_multiple_events_from_page(url, nlp, event_container_selector, title_selector, description_selector, link_selector, base_url=None):
     """
     Scrapes multiple events from a single page.
@@ -175,10 +228,10 @@ def scrape_multiple_events_from_page(url, nlp, event_container_selector, title_s
     events = []
     is_bfi = "bfi.org.uk" in url
     is_NT = "nationaltheatre.org.uk" in url
-    # is_NG = "npg.org.uk" in url
     is_SBC = "southbankcentre.co.uk" in url
     is_RA = "royalacademy.org.uk" in url
     is_NPG = "npg.org.uk" in url
+    is_RAH = "royalalberthall.com" in url
     html = ""
     
     try:
@@ -199,15 +252,11 @@ def scrape_multiple_events_from_page(url, nlp, event_container_selector, title_s
                 },
             ]
             
-            html = get_html_with_selenium(url, bfi_initial_wait, bfi_click_actions)
+            html = get_html_with_selenium_base(url, bfi_initial_wait, bfi_click_actions)
         elif is_NT:         
             nt_initial_wait = (By.CLASS_NAME, "c-event-card")
             nt_click_actions = None
             html = get_html_with_selenium(url, nt_initial_wait, nt_click_actions)
-        # elif is_NG:
-        #     ng_initial_wait = (By.CLASS_NAME, "ng-card-wrap")
-        #     ng_click_actions = None
-        #     html = get_html_with_selenium(url, ng_initial_wait, ng_click_actions)
         elif is_SBC:
             sbc_initial_wait = (By.CLASS_NAME, "c-event-card")
             sbc_click_actions = None
@@ -220,6 +269,10 @@ def scrape_multiple_events_from_page(url, nlp, event_container_selector, title_s
             npg_initial_wait = (By.CLASS_NAME, "o-card-standard")
             npg_click_actions = None
             html = get_html_with_selenium(url, npg_initial_wait, npg_click_actions)
+        elif is_RAH:
+            rah_initial_wait = (By.CLASS_NAME, "event-item")
+            rah_click_actions = None
+            html = get_html_with_selenium_base(url, rah_initial_wait, rah_click_actions)    
         else:
             res = requests.get(url)
             res.raise_for_status()
@@ -264,33 +317,26 @@ def scrape_multiple_events_from_page(url, nlp, event_container_selector, title_s
 
 def find_cate_blanchett_events_across_pages(start_urls_with_selectors, nlp):
     """
-    Scrapes events across multiple pages (currently only the first page of each).
+    Scrapes events across multiple pages using multiprocessing.
     """
     all_found_events = []
     
-    # Determine a reasonable number of workers.
     num_urls = len(start_urls_with_selectors)
-    max_workers = min(5, num_urls if num_urls > 0 else 1)
+    
+    # Use ProcessPoolExecutor to leverage multiple CPU cores and avoid GIL issues
+    # A common practice is to use a number of processes close to the number of CPU cores
+    max_workers = os.cpu_count() or 1
+    
+    print(f"Starting scraping with up to {max_workers} concurrent processes for {num_urls} URLs.")
 
-    print(f"Starting scraping with up to {max_workers} concurrent workers for {num_urls} URLs.")
-
-    # Run the web scraping function concurrently
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Submit scraping tasks to the executor
-        # Key is the future object, value is the URL for context for the dictionary
-        '''
-        Example data structure:
-            {
-                <Future at ID state="pending">: url_data[0]
-            }
-        '''
-        # url_data[0]: target url, url_data[1]: event_container_selector, url_data[2]: title_selector
-        # url_data[3]: description_selector, url_data[4]: link_selector, url_data[5]: base_url
+    # Run the web scraping function concurrently using processes
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        # submit() and as_completed() are identical for both executors
         future_to_url_data = {
             executor.submit(
                 scrape_multiple_events_from_page,
                 url_data[0], nlp, url_data[1], url_data[2], url_data[3], url_data[4], url_data[5]
-            ): url_data[0]  
+            ): url_data[0]
             for url_data in start_urls_with_selectors
         }
 
@@ -298,8 +344,8 @@ def find_cate_blanchett_events_across_pages(start_urls_with_selectors, nlp):
             source_url = future_to_url_data[future]
             try:
                 events_from_page = future.result()
-                if events_from_page:  # Check if the result is not None or empty
-                    all_found_events.extend(events_from_page) # Append to a result dictionary
+                if events_from_page:
+                    all_found_events.extend(events_from_page)
                     print(f"Successfully processed and got {len(events_from_page)} events from: {source_url}")
             except Exception as exc:
                 print(f"Scraping {source_url} generated an exception: {exc}")

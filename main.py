@@ -28,16 +28,19 @@ def main():
         ("https://www.barbican.org.uk/whats-on", "article.listing--event", "h2.listing-title--event", "div.search-listing__intro", "a.search-listing__link", "https://www.barbican.org.uk"),
         ("https://www.nationaltheatre.org.uk/whats-on", "div.c-event-card", "h3.c-event-card__title", "div.c-event-card__description", "a.c-event-card__cover-link", "https://www.nationaltheatre.org.uk"),
         ("https://premierescene.net/film-calendar/", "div.vsel-content", "h4.vsel-meta-title", "div.vsel-info", "a", "https://premierescene.net/film-calendar/"),
-        # ("https://whatson.bfi.org.uk/Online/default.asp", "div.Highlight", "h3.Highlight__heading", "p.Highlight__copy", "a.Highlight__link", "https://www.bfi.org.uk"),
+        ("https://whatson.bfi.org.uk/Online/default.asp", "div.Highlight", "h3.Highlight__heading", "p.Highlight__copy", "a.Highlight__link", "https://www.bfi.org.uk"), 
         ("https://www.bbc.co.uk/news/entertainment_and_arts", "li.e1gp961v0", "div.ssrcss-espw6b-Stack", "a", "a.ssrcss-5wtq5v-PromoLink", "https://www.bbc.co.uk"),
         ("https://www.npg.org.uk/whatson/events-calendar?when=&what=event&who=", "div.o-card-standard", "a.a-link--nodec", "div.o-card-standard__text > div:last-child", "div.o-card-standard__image", "https://www.npg.org.uk"),
-        # ("https://www.southbankcentre.co.uk/whats-on/", "div.c-event-card", "h3.c-event-card__title", "div.c-event-card__listing-details", "a.c-event-card__cover-link", "https://www.southbankcentre.co.uk"),
+        ("https://www.southbankcentre.co.uk/whats-on/", "div.c-event-card", "h3.c-event-card__title", "div.c-event-card__listing-details", "a.c-event-card__cover-link", "https://www.southbankcentre.co.uk"),
         ("https://www.royalacademy.org.uk/exhibitions-and-events?page=1&what-filter=talks-lectures", "li.whats-on-listing__item", "h2.event-card__title", "h2.event-card__title", "a.event-card__link", "https://www.royalacademy.org.uk"),
-        # ("https://www.nationalgallery.org.uk/events/talks-and-conversations", "li.ng-card-wrap", "h3.trimmed", "h3.trimmed", "a.dl-product-link", "https://www.nationalgallery.org.uk"),
+        ("https://www.nationalgallery.org.uk/events/talks-and-conversations", "li.ng-card-wrap", "h3.trimmed", "h3.trimmed", "a.dl-product-link", "https://www.nationalgallery.org.uk"),
         ("https://www.vam.ac.uk/whatson?type=talk", "li.b-event-teaser", "h2.b-event-teaser__title", "h2.b-event-teaser__title", "a.b-event-teaser__link", "https://www.vam.ac.uk"),
         ("https://www.tate.org.uk/whats-on?event_type=talk", "div.card", "h2.card__title", "div.card__description", "a", "https://www.tate.org.uk"),
-        # ("https://wellcomecollection.org/events?format=Wd-QYCcAACcAoiJS", "a.sc-d97058b-1", "h3.sc-4e66622a-0", "h3.sc-4e66622a-0", "a.sc-d97058b-1", "https://wellcomecollection.org"),
+        ("https://wellcomecollection.org/events?format=Wd-QYCcAACcAoiJS%2CWcKmiysAACx_A8NR%2CWn3Q3SoAACsAIeFI%2CYzGUuBEAANURf3dM", "a.sc-d43cd53f-1", "h3.sc-d36d6c1a-0", "h3.sc-d36d6c1a-0", "a.sc-d43cd53f-1", "https://wellcomecollection.org"),
         ("https://www.londonlibrary.co.uk/whats-on", "li.event", "h3.title", "div.event-description p", "a", "https://www.londonlibrary.co.uk"),
+        ("https://www.lso.co.uk/whats-on/?location=united-kingdom", "div.c-event-card", "h3.c-event-card__title", "p.c-event-card__excerpt", "a.c-event-card__link", "https://www.lso.co.uk"),
+        ("https://www.royalalberthall.com/tickets/list", "div.event-item", "div.event-item__title", "div.event-item__title", "a.event-item__link", "https://www.royalalberthall.com"),
+        ("https://lpo.org.uk/whats-on/", "div.card-container", "h3", "div.section--accordion__item__content", "a.card-link", "https://lpo.org.uk"),
 
         # Test link of Cate news but rather an event
         # ("https://www.bbc.co.uk/news/entertainment-arts-17725952", "div.ssrcss-1ki8hfp-StyledZone", "h1.ssrcss-1s9pby4-Heading e10rt3ze0", "div.ssrcss-suhx0k-RichTextComponentWrapper", "a", "https://www.bbc.co.uk")
