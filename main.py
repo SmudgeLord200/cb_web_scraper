@@ -23,7 +23,7 @@ def main():
         return
 
     # Updated structure to include selectors for multiple events
-    # format is event_container_selector, title_selector, description_selector, link_selector, base_url
+    # format is url, event_container_selector, title_selector, description_selector, link_selector, base_url
     start_urls_with_selectors = [
         ("https://www.barbican.org.uk/whats-on", "article.listing--event", "h2.listing-title--event", "div.search-listing__intro", "a.search-listing__link", "https://www.barbican.org.uk"),
         ("https://www.nationaltheatre.org.uk/whats-on", "div.c-event-card", "h3.c-event-card__title", "div.c-event-card__description", "a.c-event-card__cover-link", "https://www.nationaltheatre.org.uk"),
@@ -41,6 +41,7 @@ def main():
         ("https://www.lso.co.uk/whats-on/?location=united-kingdom", "div.c-event-card", "h3.c-event-card__title", "p.c-event-card__excerpt", "a.c-event-card__link", "https://www.lso.co.uk"),
         ("https://www.royalalberthall.com/tickets/list", "div.event-item", "div.event-item__title", "div.event-item__title", "a.event-item__link", "https://www.royalalberthall.com"),
         ("https://lpo.org.uk/whats-on/", "div.card-container", "h3", "div.section--accordion__item__content", "a.card-link", "https://lpo.org.uk"),
+        ("https://www.rbo.org.uk/tickets-and-events", "div.sc-4ax36u-1", "h2.typography-module_header__FVsLI", "div.sc-4ax36u-5", "a.wqwmzk-6", "https://www.rbo.org.uk"),
 
         # Test link of Cate news but rather an event
         # ("https://www.bbc.co.uk/news/entertainment-arts-17725952", "div.ssrcss-1ki8hfp-StyledZone", "h1.ssrcss-1s9pby4-Heading e10rt3ze0", "div.ssrcss-suhx0k-RichTextComponentWrapper", "a", "https://www.bbc.co.uk")

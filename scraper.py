@@ -232,6 +232,7 @@ def scrape_multiple_events_from_page(url, nlp, event_container_selector, title_s
     is_RA = "royalacademy.org.uk" in url
     is_NPG = "npg.org.uk" in url
     is_RAH = "royalalberthall.com" in url
+    is_RBO = "rbo.org.uk" in url
     html = ""
     
     try:
@@ -272,7 +273,11 @@ def scrape_multiple_events_from_page(url, nlp, event_container_selector, title_s
         elif is_RAH:
             rah_initial_wait = (By.CLASS_NAME, "event-item")
             rah_click_actions = None
-            html = get_html_with_selenium_base(url, rah_initial_wait, rah_click_actions)    
+            html = get_html_with_selenium_base(url, rah_initial_wait, rah_click_actions)
+        elif is_RBO:
+            rbo_initial_wait = (By.CLASS_NAME, "sc-4ax36u-1")
+            rbo_click_actions = None
+            html = get_html_with_selenium(url, rbo_initial_wait, rbo_click_actions)
         else:
             res = requests.get(url)
             res.raise_for_status()
