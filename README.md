@@ -19,18 +19,15 @@ This project scrapes various websites to find events (talks, screenings, Q&As, e
 web_scraper/
 ├── main.py                # Main application script
 ├── email_notification.py  # Handles email sending
-├── scraper.py             # Handles event scraping and NLP
+├── scraper.py             # Handles event scraping using BeautifulSoup and NLP
+├── selenium_scraper_methods.py # Handles event scraping using Selenium and SeleniumBase
 ├── data_storage.py        # Handles data storage
 ├── notified_event_urls.json      # Stores URLs of events already notified (created/updated by the script)
 ├── cate_blanchett_events.json    # Stores all relevant events found in the last run (created/updated by the script)
 ├── recipients.json               # (User-created) List of recipient email addresses in JSON format
-│   OR
-├── recipients.txt                # (User-created) List of recipient email addresses, one per line
-├── web_scraper_old.py            # An older version of the scraper
-└── test.py                       # A test script or earlier simplified scraper
 ```
 
-*   **`web_scraper.py`**: The core script that handles fetching, parsing, NLP analysis, and email notifications.
+*   **`scraper.py`**: The core script that handles fetching, parsing, NLP analysis, and email notifications.
 *   **`notified_event_urls.json`**: Tracks events for which notifications have been sent to prevent duplicates.
 *   **`cate_blanchett_events.json`**: A log of all events deemed relevant in the most recent scan.
 *   **`recipients.json` / `recipients.txt`**: You need to create one of these files to list the email addresses for notifications.
@@ -71,17 +68,12 @@ web_scraper/
     *   `yagmail` will prompt for your email password the first time it's run and can store it in your system's keyring for future use. Alternatively, you can set environment variables `YAGMAIL_USER` and `YAGMAIL_PASSWORD`.
 
 6.  **Create Recipient List File**:
-    Create a file named `recipients.json` in the same directory as `web_scraper.py` with a list of email addresses:
+    Create a file named `recipients.json` in the same directory as `scraper.py` with a list of email addresses:
     ```json
     [
         "recipient1@example.com",
         "recipient2@example.com"
     ]
-    ```
-    Alternatively, create `recipients.txt` with one email per line:
-    ```
-    recipient1@example.com
-    recipient2@example.com
     ```
     The script will look for `recipients.json` by default (as per `recipient_file_path = "recipients.json"` in `web_scraper.py`).
 
@@ -90,7 +82,7 @@ web_scraper/
 Run the main script from the project's root directory:
 
 ```bash
-python web_scraper.py
+python main.py
 ```
 
 **Output**:
@@ -102,7 +94,7 @@ python web_scraper.py
 
 ## Configuration
 
-Most configurations are done directly within `web_scraper.py`:
+Most configurations are done directly within `scraper.py`:
 
 *   **Target Websites & Selectors**:
     The `start_urls_with_selectors` list in `main()` defines the websites to scrape. Each entry is a tuple containing:
