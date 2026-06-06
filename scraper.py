@@ -1,4 +1,5 @@
 import os
+import re
 import requests
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
@@ -6,116 +7,164 @@ from concurrent.futures import ProcessPoolExecutor
 import concurrent.futures
 from selenium_scraper_methods import get_html_with_selenium, get_html_with_selenium_base
 
+_CATE_NAME_RE = re.compile(r"cate\s+blanchett", re.IGNORECASE)
+
+def _normalize_event_text(text):
+    """Collapse whitespace and non-breaking spaces for reliable substring checks."""
+    if not text:
+        return ""
+    normalized = text.replace("\u00a0", " ").replace("&nbsp;", " ")
+    return re.sub(r"\s+", " ", normalized).strip()
+
+def _mentions_cate_blanchett(text):
+    return bool(_CATE_NAME_RE.search(_normalize_event_text(text)))
+
+def _cate_name_token_spans(doc):
+    """Yield spaCy spans covering each 'Cate Blanchett' occurrence in the doc."""
+    for i in range(len(doc) - 1):
+        if doc[i].text.lower() == "cate" and doc[i + 1].text.lower() == "blanchett":
+            yield doc[i : i + 2]
+
 def is_cate_blanchett_involved(title, description, nlp):
     """
-    Advanced NLP check for Cate Blanchett's involvement, differentiating
-    between active participation in an event and merely sharing views,
-    using SpaCy's dependency parsing and rule-based matching.
+    Detect whether Cate Blanchett is actively involved in an event (hosting, performing,
+    speaking, cast in a production, etc.), not merely quoted in news coverage.
     """
-    combine_text = f"{title} {description}"
-    doc = nlp(combine_text)
-    full_name_tokens = ["Cate", "Blanchett"]
+    combine_text = _normalize_event_text(f"{title} {description}")
+    if not _mentions_cate_blanchett(combine_text):
+        return False
 
-    # --- Step 1: Find "Cate Blanchett" and analyze her context ---
-    found_cate = None
-    for ent in doc.ents:
-        if ent.label_ == "PERSON" and "Blanchett" in ent.text:
-            # Prefer the exact match if available
-            if "Cate Blanchett" in ent.text:
-                found_cate = ent
-                break
-            # Otherwise, use the entity with Blanchett
-            if found_cate is None: # Only assign if exact match not found yet
-                 found_cate = ent
-
-    # If "Cate Blanchett" is not found as a PERSON entity, try token-based
-    if found_cate is None:
-        for i in range(len(doc) - 1):
-            if doc[i].text.lower() == full_name_tokens[0].lower() and doc[i+1].text.lower() == full_name_tokens[1].lower():
-                found_cate = doc[i:i+2] # Slice representing the tokens
-                break
-
-    if found_cate is None:
-        return False # Cate Blanchett not found in text
-
-    # --- Step 2: Analyze the verbs related to "Cate Blanchett" ---
-
-    # Define action verbs vs. passive/reporting verbs
-    action_verbs = {"host", "hosts", "hosted", "co-host", "co-hosts", "co-hosted",
-                    "present", "presents", "presented", "appear", "appears", "appeared",
-                    "attend", "attends", "attended", "join", "joins", "joined",
-                    "participate", "participates", "participated",
-                    "introduce", "introduces", "introduced", "interview", "interviews", "interviewed"}
-
-    # Define reporting/view-sharing verbs (to potentially exclude)
-    reporting_verbs = {"say", "says", "said", "state", "states", "stated",
-                       "believe", "believes", "believed", "think", "thinks", "thought",
-                       "express", "expresses", "expressed", "comment", "comments", "commented",
-                       "discuss", "discusses", "discussed", "reveal", "reveals", "revealed",
-                       "share", "shares", "shared", "opine", "opines", "opined", "tell", "tells", "told"}
-
-    # Iterate through tokens in a window around "Cate Blanchett" or her entity
-    # And specifically look at dependency relations to verbs
-    for token in found_cate:
-        # Check if the token is a subject of an action verb
-        if token.dep_ in ["nsubj", "nsubjpass", "agent"]: # Nominal subject, passive nominal subject, agent
-            head = token.head # The verb that 'token' is the subject of
-            if head.pos_ == "VERB":
-                # If it's an action verb, it's likely involvement
-                if head.lemma_.lower() in action_verbs:
-                    # Further check for "in conversation with" pattern, etc.
-                    # This is more precise than just a general verb
-                    if head.lemma_.lower() == "interview" and "by" in [d.text.lower() for d in head.children]:
-                         # Check if "interviewed by Cate Blanchett" (passive involvement)
-                         for child in head.children:
-                             if child.dep_ == "agent" and "blanchett" in child.text.lower():
-                                 return True
-                    elif head.lemma_.lower() == "conversation": # e.g. "in conversation with Cate Blanchett"
-                         for child in head.children:
-                             if child.dep_ == "prep" and child.text.lower() == "with":
-                                 return True
-                    else:
-                        return True
-                # If it's a reporting verb, it's likely sharing views, so we might *not* return True immediately
-                elif head.lemma_.lower() in reporting_verbs:
-                    # We want to be careful here. If "Cate Blanchett said X at Y event", it's still an event.
-                    # This requires looking for event-related nouns nearby.
-                    # For simplicity, we'll try to prioritize positive action verbs.
-                    pass # Don't return True yet for reporting verbs
-
-    # --- Step 3: Look for specific phrases and event-related nouns/contexts ---
-    # This acts as a fallback and a reinforcing check
     text_lower = combine_text.lower()
-    if "cate blanchett" in text_lower:
-        # Direct phrases implying involvement
-        if "hosted by cate blanchett" in text_lower or \
-           "co-hosted by cate blanchett" in text_lower or \
-           "cate blanchett hosts" in text_lower or \
-           "cate blanchett presents" in text_lower or \
-           "in conversation with cate blanchett" in text_lower or \
-           "q&a with cate blanchett" in text_lower or \
-           "featuring cate blanchett" in text_lower:
-            return True
+    doc = nlp(combine_text)
 
-        # Look for proximity of name to event-related words
-        event_nouns = {"event", "talk", "screentalk", "panel", "discussion", "lecture", "summit",
-                       "party", "gala", "ceremony", "premiere", "festival", "show", "performance"}
-        for i in range(len(doc) - 1):
-            if doc[i].text.lower() == full_name_tokens[0].lower() and doc[i+1].text.lower() == full_name_tokens[1].lower():
-                # Check 5 tokens before and 10 tokens after the name for event nouns
-                window_start = max(0, i - 5)
-                window_end = min(len(doc), i + 10)
-                for j in range(window_start, window_end):
-                    if doc[j].lemma_.lower() in event_nouns:
-                        # Ensure there's also an action verb nearby if an event noun is found
-                        # This adds confidence.
-                        for k in range(window_start, window_end):
-                            if doc[k].pos_ == "VERB" and doc[k].lemma_.lower() in action_verbs:
-                                return True
-                        # If a reporting verb is there, check for specific event context.
-                        # This is the tricky part. For now, we lean towards involvement if an event noun is present.
-                        if doc[j].lemma_.lower() in event_nouns: # If an event noun is found with Cate nearby, assume involvement
-                            return True
+    # Verbs where Cate as subject usually means active participation
+    subject_action_verbs = {
+        "host", "present", "appear", "attend", "join", "participate",
+        "introduce", "interview", "speak", "discuss", "perform", "star",
+    }
+    # Verbs where Cate as object often means cast / creative involvement
+    object_involvement_verbs = {
+        "direct", "star", "cast", "feature", "include", "join", "lead",
+        "perform", "play", "present", "host", "introduce",
+    }
+    reporting_verbs = {
+        "say", "state", "believe", "think", "express", "comment",
+        "reveal", "share", "opine", "tell",
+    }
+    event_nouns = {
+        "event", "talk", "screentalk", "panel", "discussion", "lecture", "summit",
+        "party", "gala", "ceremony", "premiere", "festival", "show", "performance",
+        "production", "play", "season", "screening", "conversation", "masterclass",
+        "workshop", "evening", "session", "stage", "theatre", "theater",
+    }
+
+    high_confidence_phrases = (
+        "hosted by cate blanchett",
+        "co-hosted by cate blanchett",
+        "cate blanchett hosts",
+        "cate blanchett presents",
+        "in conversation with cate blanchett",
+        "q&a with cate blanchett",
+        "featuring cate blanchett",
+        "starring cate blanchett",
+        "directs cate blanchett",
+        "directed by cate blanchett",
+        "cate blanchett stars",
+        "cate blanchett performs",
+        "cate blanchett leads",
+        "led by cate blanchett",
+        "join cate blanchett",
+        "cate blanchett joins",
+    )
+    if any(phrase in text_lower for phrase in high_confidence_phrases):
+        return True
+
+    # News-style quotes without event context (e.g. BBC articles)
+    news_only_phrases = (
+        "cate blanchett said",
+        "cate blanchett says",
+        "cate blanchett told",
+        "according to cate blanchett",
+        "cate blanchett believes",
+        "cate blanchett thinks",
+    )
+    if any(phrase in text_lower for phrase in news_only_phrases):
+        if not any(noun in text_lower for noun in event_nouns):
+            return False
+
+    # --- NLP: subject or object of involvement verbs ---
+    for name_span in _cate_name_token_spans(doc):
+        for token in name_span:
+            if token.dep_ in ("nsubj", "nsubjpass", "agent") and token.head.pos_ == "VERB":
+                lemma = token.head.lemma_.lower()
+                if lemma in subject_action_verbs:
+                    return True
+                if lemma in reporting_verbs:
+                    continue
+
+            if token.dep_ in ("dobj", "pobj", "attr", "oprd") and token.head.pos_ == "VERB":
+                if token.head.lemma_.lower() in object_involvement_verbs:
+                    return True
+
+            # "directed by X" with Cate elsewhere, or passive "starring Cate Blanchett"
+            if token.dep_ == "pobj" and token.head.lemma_.lower() == "by":
+                verb = token.head.head
+                if verb.pos_ == "VERB" and verb.lemma_.lower() in object_involvement_verbs:
+                    return True
+
+    # --- Phrase fallbacks near the name ---
+    additional_involvement_phrases = (
+        "with cate blanchett",
+        "featuring cate blanchett",
+        "cate blanchett in",
+        "cate blanchett will",
+        "cate blanchett and",
+        "cate blanchett on",
+        "cate blanchett at",
+        "cate blanchett talks",
+        "cate blanchett present",
+        "cate blanchett interview",
+        "cate blanchett discussion",
+        "cate blanchett conversation",
+        "cate blanchett q&a",
+        "cate blanchett explores",
+        "cate blanchett speaks",
+        "meet cate blanchett",
+    )
+    if any(phrase in text_lower for phrase in additional_involvement_phrases):
+        return True
+
+    # Name near event vocabulary in the same sentence
+    for sent in doc.sents:
+        if not _mentions_cate_blanchett(sent.text):
+            continue
+        sent_lower = sent.text.lower()
+        if any(noun in sent_lower for noun in event_nouns):
+            return True
+        for i, token in enumerate(sent):
+            if token.text.lower() != "cate" or i + 1 >= len(sent) or sent[i + 1].text.lower() != "blanchett":
+                continue
+            window = sent[max(0, i - 8) : min(len(sent), i + 12)]
+            if any(t.lemma_.lower() in event_nouns for t in window):
+                return True
+            if any(
+                t.pos_ == "VERB"
+                and t.lemma_.lower() in subject_action_verbs | object_involvement_verbs
+                for t in window
+            ):
+                return True
+
+    # Full-text event context (e.g. NT: "... new production." with cast credit)
+    if any(noun in text_lower for noun in event_nouns):
+        return True
+
+    # Cast/creative credit patterns without explicit event nouns
+    if re.search(
+        r"(directs?|directed|stars?|starred|casts?|features?|performs?|"
+        r"starring|featuring|includes?)\s+cate\s+blanchett",
+        text_lower,
+    ):
+        return True
 
     return False
 

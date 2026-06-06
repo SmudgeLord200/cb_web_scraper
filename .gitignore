@@ -25,8 +25,6 @@ downloaded_files/
 cate_blanchett_events.json
 notified_event_urls.json
 recipients.json
-test.py
-web_scraper_old.py
 
 # Secrets/Credentials (if you move them to a file)
 # config.ini

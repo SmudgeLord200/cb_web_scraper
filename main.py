@@ -36,7 +36,7 @@ def main():
         ("https://www.nationalgallery.org.uk/events/talks-and-conversations", "li.ng-card-wrap", "h3.trimmed", "h3.trimmed", "a.dl-product-link", "https://www.nationalgallery.org.uk"),
         ("https://www.vam.ac.uk/whatson?type=talk", "li.b-event-teaser", "h2.b-event-teaser__title", "h2.b-event-teaser__title", "a.b-event-teaser__link", "https://www.vam.ac.uk"),
         ("https://www.tate.org.uk/whats-on?event_type=talk", "div.card", "h2.card__title", "div.card__description", "a", "https://www.tate.org.uk"),
-        ("https://wellcomecollection.org/events?format=Wd-QYCcAACcAoiJS%2CWcKmiysAACx_A8NR%2CWn3Q3SoAACsAIeFI%2CYzGUuBEAANURf3dM", "a.sc-d43cd53f-1", "h3.sc-d36d6c1a-0", "h3.sc-d36d6c1a-0", "a.sc-d43cd53f-1", "https://wellcomecollection.org"),
+        ("https://wellcomecollection.org/events?format=Wd-QYCcAACcAoiJS%2CWcKmiysAACx_A8NR%2CWn3Q3SoAACsAIeFI%2CYzGUuBEAANURf3dM", "a.sc-57e2422-1", "h3.sc-9761ac4c-0", "h3.sc-9761ac4c-0", "a.sc-57e2422-1", "https://wellcomecollection.org"),
         ("https://www.londonlibrary.co.uk/whats-on", "li.event", "h3.title", "div.event-description p", "a", "https://www.londonlibrary.co.uk"),
         ("https://www.lso.co.uk/whats-on/?location=united-kingdom", "div.c-event-card", "h3.c-event-card__title", "p.c-event-card__excerpt", "a.c-event-card__link", "https://www.lso.co.uk"),
         ("https://www.royalalberthall.com/tickets/list", "div.event-item", "div.event-item__title", "div.event-item__title", "a.event-item__link", "https://www.royalalberthall.com"),
@@ -86,7 +86,7 @@ def main():
             print("Warning: No recipient emails loaded. Email will not be sent.") 
 
         email_subject = "New Cate Blanchett Event(s) Found"
-        email_body = "The following new Cate Blanchett events were found:\n\n" + json.dumps(newly_relevant_events, indent=4)
+        email_body = "Welcome to the Cate Blanchett Events Notification List! The web scraper keeps you updated on all the latest events involving Cate Blanchett. It is not completely accurate, but we'll do our best to notify you of any relevant events.\n\nThe following new Cate Blanchett events were found:\n\n" + json.dumps(newly_relevant_events, indent=4)
 
         send_event_email(email_subject, email_body, recipient_email_list, SENDER_EMAIL)
 
